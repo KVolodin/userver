@@ -6,7 +6,6 @@
 #include <fmt/ranges.h>
 
 #include <userver/kafka/impl/configuration.hpp>
-#include <userver/kafka/impl/offset.hpp>
 #include <userver/kafka/impl/stats.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/testsuite/testpoint.hpp>

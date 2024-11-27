@@ -7,7 +7,6 @@
 #include <userver/engine/sleep.hpp>
 #include <userver/formats/json/value_builder.hpp>
 #include <userver/kafka/impl/configuration.hpp>
-#include <userver/kafka/impl/offset.hpp>
 #include <userver/kafka/impl/stats.hpp>
 #include <userver/testsuite/testpoint.hpp>
 #include <userver/tracing/span.hpp>

@@ -18,7 +18,6 @@ class ConsumerImpl;
 
 struct ConsumerConfiguration;
 struct Secret;
-struct OffsetRange;
 
 /// @brief Parameters Consumer uses in runtime.
 /// The struct is used only for documentation purposes, Consumer can be

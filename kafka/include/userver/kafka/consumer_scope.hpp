@@ -3,6 +3,7 @@
 #include <functional>
 
 #include <userver/kafka/message.hpp>
+#include <userver/kafka/topic.hpp>
 
 USERVER_NAMESPACE_BEGIN
 
@@ -11,7 +12,6 @@ namespace kafka {
 namespace impl {
 
 class Consumer;
-struct OffsetRange;
 
 }  // namespace impl
 

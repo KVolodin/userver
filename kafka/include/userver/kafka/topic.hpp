@@ -2,13 +2,13 @@
 
 USERVER_NAMESPACE_BEGIN
 
-namespace kafka::impl {
+namespace kafka {
 
 struct OffsetRange final {
     std::int64_t high{};
     std::int64_t low{};
 };
 
-}  // namespace kafka::impl
+}  // namespace kafka
 
 USERVER_NAMESPACE_END

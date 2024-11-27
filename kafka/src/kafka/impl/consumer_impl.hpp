@@ -9,6 +9,7 @@
 #include <userver/engine/single_consumer_event.hpp>
 #include <userver/kafka/impl/holders.hpp>
 #include <userver/kafka/message.hpp>
+#include <userver/kafka/topic.hpp>
 
 #include <kafka/impl/holders_aliases.hpp>
 
@@ -18,7 +19,6 @@ namespace kafka::impl {
 
 struct Stats;
 struct TopicStats;
-struct OffsetRange;
 
 /// @brief Consumer implementation based on `librdkafka`.
 /// @warning All methods calls the `librdkafka` functions that very often uses
