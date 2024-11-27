@@ -16,6 +16,14 @@ void ConsumerScope::Stop() noexcept { consumer_.Stop(); }
 
 void ConsumerScope::AsyncCommit() { consumer_.AsyncCommit(); }
 
+std::pair<std::int64_t, std::int64_t> ConsumerScope::GetMinMaxOffset(const std::string& topic, std::int32_t partition) {
+    return consumer_.GetMinMaxOffset(topic, partition);
+}
+
+std::vector<std::int32_t> ConsumerScope::GetPartitionsId(const std::string& topic){
+    return consumer_.GetPartitionsId(topic);
+}
+
 }  // namespace kafka
 
 USERVER_NAMESPACE_END
