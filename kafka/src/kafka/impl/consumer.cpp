@@ -7,6 +7,7 @@
 #include <userver/engine/sleep.hpp>
 #include <userver/formats/json/value_builder.hpp>
 #include <userver/kafka/impl/configuration.hpp>
+#include <userver/kafka/impl/offset.hpp>
 #include <userver/kafka/impl/stats.hpp>
 #include <userver/testsuite/testpoint.hpp>
 #include <userver/tracing/span.hpp>
@@ -164,6 +165,14 @@ void Consumer::AsyncCommit() {
         /// occurs in future, after some polling cycles.
         consumer_->AsyncCommit();
     }).Get();
+}
+
+OffsetRange Consumer::GetOffsetRange(const std::string& topic, std::int32_t partition) const {
+    consumer_->GetOffsetRange(topic, partition);
+}
+
+std::vector<std::uint32_t> Consumer::GetPartitionIds(const std::string& topic) const {
+    consumer_->GetPartitionIds(topic);
 }
 
 void Consumer::Stop() noexcept {

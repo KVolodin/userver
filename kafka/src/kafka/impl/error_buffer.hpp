@@ -17,6 +17,7 @@ constexpr std::size_t kErrorBufferSize = 512;
 using ErrorBuffer = std::array<char, kErrorBufferSize>;
 
 [[noreturn]] void PrintErrorAndThrow(std::string_view failed_action, const ErrorBuffer& err_buf);
+[[noreturn]] void PrintErrorAndThrow(std::string_view failed_action, std::string_view reason);
 
 }  // namespace kafka::impl
 

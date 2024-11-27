@@ -18,6 +18,7 @@ class ConsumerImpl;
 
 struct ConsumerConfiguration;
 struct Secret;
+struct OffsetRange;
 
 /// @brief Parameters Consumer uses in runtime.
 /// The struct is used only for documentation purposes, Consumer can be
@@ -95,6 +96,14 @@ private:
     /// @see ConsumerScope::AsyncCommit for better commitment process
     /// understanding
     void AsyncCommit();
+
+    /// @brief Retrieves the low and high offsets for the specified kafka topic and partition.
+    /// @see ConsumerScope::GetOffsetRange for better commitment process
+    OffsetRange GetOffsetRange(const std::string& topic, std::int32_t partition) const;
+
+    /// @brief Retrieves the partition IDs for the specified kafka topic.
+    /// @see ConsumerScope::GetPartitionIds for better commitment process
+    std::vector<std::uint32_t> GetPartitionIds(const std::string& topic) const;
 
     /// @brief Adds consumer name to current span.
     void ExtendCurrentSpan() const;

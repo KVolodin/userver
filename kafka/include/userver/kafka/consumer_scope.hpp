@@ -11,6 +11,7 @@ namespace kafka {
 namespace impl {
 
 class Consumer;
+struct OffsetRange;
 
 }  // namespace impl
 
@@ -118,15 +119,14 @@ public:
     /// @warning This is a blocking call
     /// @param topic The name of the Kafka topic.
     /// @param partition The partition number of the Kafka topic.
-    /// @return A pair of integers representing the minimum and maximum offsets for the given topic and partition.
-    ///         The first value is the minimum offset, and the second is the maximum offset.
-    std::pair<std::int64_t, std::int64_t> GetMinMaxOffset(const std::string& topic, std::int32_t partition);
+    /// @return A struct with minimum and maximum offsets for the given topic and partition.
+    OffsetRange GetOffsetRange(const std::string& topic, std::int32_t partition) const;
 
     /// @brief Retrieves the partition IDs for the specified Kafka topic.
     /// @warning This is a blocking call
     /// @param topic The name of the Kafka topic.
     /// @return A vector of partition IDs for the given topic.
-    std::vector<std::int32_t> GetPartitionsId(const std::string& topic);
+    std::vector<std::uint32_t> GetPartitionIds(const std::string& topic) const;
 
 private:
     friend class impl::Consumer;

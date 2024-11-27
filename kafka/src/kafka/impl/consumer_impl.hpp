@@ -18,6 +18,7 @@ namespace kafka::impl {
 
 struct Stats;
 struct TopicStats;
+struct OffsetRange;
 
 /// @brief Consumer implementation based on `librdkafka`.
 /// @warning All methods calls the `librdkafka` functions that very often uses
@@ -37,11 +38,11 @@ public:
     /// @brief Schedules the commitment task.
     void AsyncCommit();
 
-    /// @brief Retrieves the minimum and maximum offsets for the specified Kafka topic and partition.
-    std::pair<std::int64_t, std::int64_t> GetMinMaxOffset(const std::string& topic, std::int32_t partition);
+    /// @brief Retrieves the low and high offsets for the specified kafka topic and partition.
+    OffsetRange GetOffsetRange(const std::string& topic, std::int32_t partition) const;
 
-    /// @brief Retrieves the partition IDs for the specified Kafka topic.
-    std::vector<std::int32_t> GetPartitionsId(const std::string& topic);
+    /// @brief Retrieves the partition IDs for the specified kafka topic.
+    std::vector<std::uint32_t> GetPartitionIds(const std::string& topic) const;
 
     /// @brief Effectively calls `PollMessage` until `deadline` is reached
     /// and no more than `max_batch_size` messages polled.

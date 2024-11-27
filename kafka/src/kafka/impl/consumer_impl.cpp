@@ -5,9 +5,8 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
-#include <boost/range/iterator_range.hpp>
-
 #include <userver/kafka/impl/configuration.hpp>
+#include <userver/kafka/impl/offset.hpp>
 #include <userver/kafka/impl/stats.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/testsuite/testpoint.hpp>
@@ -15,6 +14,7 @@
 #include <userver/utils/fast_scope_guard.hpp>
 #include <userver/utils/span.hpp>
 
+#include <kafka/impl/error_buffer.hpp>
 #include <kafka/impl/holders_aliases.hpp>
 #include <kafka/impl/log_level.hpp>
 
@@ -294,51 +294,57 @@ void ConsumerImpl::Commit() { rd_kafka_commit(consumer_.GetHandle(), nullptr, /*
 
 void ConsumerImpl::AsyncCommit() { rd_kafka_commit(consumer_.GetHandle(), nullptr, /*async=*/1); }
 
-std::pair<std::int64_t, std::int64_t> ConsumerImpl::GetMinMaxOffset(const std::string& topic, std::int32_t partition) {
-    std::int64_t offset_high{-1};
-    std::int64_t offset_low{-1};
-
+OffsetRange ConsumerImpl::GetOffsetRange(const std::string& topic, std::int32_t partition) const {
+    OffsetRange offset_range;
     auto err = rd_kafka_query_watermark_offsets(
-        consumer_.GetHandle(), topic.data(), partition, &offset_low, &offset_high, /*timeout_ms=*/-1
+        consumer_.GetHandle(),
+        topic.с_str(),
+        partition,
+        &offset_range.low,
+        &offset_range.high,
+        /*timeout_ms=*/-1
     );
     if (err != RD_KAFKA_RESP_ERR_NO_ERROR) {
-        LOG_ERROR() << fmt::format("Failed to get offsets: {}", rd_kafka_err2str(err));
-        return {-1, -1};
+        PrintErrorAndThrow("get offsets", rd_kafka_err2str(err));
     }
 
-    if (offset_high == RD_KAFKA_OFFSET_INVALID) {
-        LOG_ERROR() << fmt::format("Invalid offset for topic {} partition {}", topic, partition);
-        return {-1, -1};
+    if (offset_range.low == RD_KAFKA_OFFSET_INVALID || offset_range.high == RD_KAFKA_OFFSET_INVALID) {
+        PrintErrorAndThrow("get offsets", fmt::format("invalid offset for topic {} partition {}", topic, partition));
     }
 
-    return {offset_low, offset_high};
+    return offset_range;
 }
 
-std::vector<std::int32_t> ConsumerImpl::GetPartitionsId(const std::string& topic) {
-    const rd_kafka_metadata_t* raw_metadata{nullptr};
-    auto err = rd_kafka_metadata(consumer_.GetHandle(), 0, nullptr, &raw_metadata, /*timeout_ms=*/-1);
-    if (err != RD_KAFKA_RESP_ERR_NO_ERROR) {
-        LOG_ERROR() << fmt::format("Failed to fetch metadata: ", rd_kafka_err2str(err));
-        return {};
-    }
-    MetadataHolder metadata{raw_metadata};
+std::vector<std::uint32_t> ConsumerImpl::GetPartitionIds(const std::string& topic) const {
+    MetadataHolder metadata{[&consumer_] {
+        const rd_kafka_metadata_t* raw_metadata{nullptr};
+        auto err = rd_kafka_metadata(consumer_.GetHandle(), 0, nullptr, &raw_metadata, /*timeout_ms=*/-1);
+        if (err != RD_KAFKA_RESP_ERR_NO_ERROR) {
+            PrintErrorAndThrow("fetch metadata", rd_kafka_err2str(err));
+        }
+        return raw_metadata;
+    }()};
 
-    auto topics = boost::make_iterator_range(metadata->topics, metadata->topics + metadata->topic_cnt);
-    auto* topic_it = std::find_if(topics.begin(), topics.end(), [&topic](const rd_kafka_metadata_topic& topic_raw) {
-        return topic == topic_raw.topic;
-    });
+    userver::utils::span<const rd_kafka_metadata_topic> topics{
+        metadata->topics, static_cast<std::size_t>(metadata->topic_cnt)};
+    const auto* topic_it =
+        std::find_if(topics.begin(), topics.end(), [&topic](const rd_kafka_metadata_topic& topic_raw) {
+            return topic == topic_raw.topic;
+        });
     if (topic_it == topics.end()) {
-        LOG_ERROR() << fmt::format("Topic not found: {}", topic);
-        return {};
+        PrintErrorAndThrow("find topic", fmt::format("{} not found", topic));
     }
 
-    std::vector<std::int32_t> partitions_id;
-    for (const auto& partition :
-         boost::make_iterator_range(topic_it->partitions, topic_it->partitions + topic_it->partition_cnt)) {
-        partitions_id.push_back(partition.id);
+    userver::utils::span<const rd_kafka_metadata_partition> partitions{
+        topic_it->partitions, static_cast<std::size_t>(topic_it->partition_cnt)};
+    std::vector<std::uint32_t> partition_ids;
+    partition_ids.reserve(partitions.size());
+
+    for (const auto& partition : partitions) {
+        partition_ids.push_back(partition.id);
     }
 
-    return partitions_id;
+    return partition_ids;
 }
 
 EventHolder ConsumerImpl::PollEvent() {
