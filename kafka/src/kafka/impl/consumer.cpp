@@ -53,6 +53,7 @@ Consumer::Consumer(
     const std::string& name,
     const std::vector<std::string>& topics,
     engine::TaskProcessor& consumer_task_processor,
+    engine::TaskProcessor& consumer_operation_task_processor,
     engine::TaskProcessor& main_task_processor,
     const ConsumerConfiguration& configuration,
     const Secret& secrets,
@@ -62,6 +63,7 @@ Consumer::Consumer(
       topics_(topics),
       execution_params(params),
       consumer_task_processor_(consumer_task_processor),
+      consumer_operation_task_processor_(consumer_operation_task_processor),
       main_task_processor_(main_task_processor),
       conf_(Configuration{name, configuration, secrets}.Release()) {
     /// To check configuration validity
@@ -166,12 +168,33 @@ void Consumer::AsyncCommit() {
     }).Get();
 }
 
-OffsetRange Consumer::GetOffsetRange(const std::string& topic, std::int32_t partition) const {
-    return consumer_->GetOffsetRange(topic, partition);
+OffsetRange Consumer::GetOffsetRange(
+    const std::string& topic,
+    std::uint32_t partition,
+    std::optional<std::chrono::milliseconds> timeout
+) const {
+    return utils::Async(
+               consumer_operation_task_processor_,
+               "consumer_getting_offset",
+               [this, &topic, partition, &timeout] {
+                   ExtendCurrentSpan();
+
+                   return consumer_->GetOffsetRange(topic, partition, timeout);
+               }
+    ).Get();
 }
 
-std::vector<std::uint32_t> Consumer::GetPartitionIds(const std::string& topic) const {
-    return consumer_->GetPartitionIds(topic);
+std::vector<std::uint32_t>
+Consumer::GetPartitionIds(const std::string& topic, std::optional<std::chrono::milliseconds> timeout) const {
+    return utils::Async(
+               consumer_operation_task_processor_,
+               "consumer_getting_partition_ids",
+               [this, &topic, &timeout] {
+                   ExtendCurrentSpan();
+
+                   return consumer_->GetPartitionIds(topic, timeout);
+               }
+    ).Get();
 }
 
 void Consumer::Stop() noexcept {

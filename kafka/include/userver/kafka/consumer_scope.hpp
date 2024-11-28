@@ -3,7 +3,7 @@
 #include <functional>
 
 #include <userver/kafka/message.hpp>
-#include <userver/kafka/topic.hpp>
+#include <userver/kafka/offset_range.hpp>
 
 USERVER_NAMESPACE_BEGIN
 
@@ -115,18 +115,25 @@ public:
     /// has stopped and leaved the group
     void AsyncCommit();
 
-    /// @brief Retrieves the minimum and maximum offsets for the specified Kafka topic and partition.
+    /// @brief Retrieves the minimum and maximum offsets for the specified topic and partition.
+    /// @throws GetOffsetRangeException if the offsets could not retrieve or if the returned offsets are invalid
     /// @warning This is a blocking call
-    /// @param topic The name of the Kafka topic.
-    /// @param partition The partition number of the Kafka topic.
-    /// @return A struct with minimum and maximum offsets for the given topic and partition.
-    OffsetRange GetOffsetRange(const std::string& topic, std::int32_t partition) const;
+    /// @param topic The name of the topic.
+    /// @param partition The partition number of the topic.
+    /// @returns A struct with minimum and maximum offsets for the given topic and partition.
+    OffsetRange GetOffsetRange(
+        const std::string& topic,
+        std::uint32_t partition,
+        std::optional<std::chrono::milliseconds> timeout = std::nullopt
+    ) const;
 
-    /// @brief Retrieves the partition IDs for the specified Kafka topic.
+    /// @brief Retrieves the partition IDs for the specified topic.
+    /// @throws GetMetadataException if failed to fetch metadata and TopicNotFoundException if topic not found
     /// @warning This is a blocking call
-    /// @param topic The name of the Kafka topic.
-    /// @return A vector of partition IDs for the given topic.
-    std::vector<std::uint32_t> GetPartitionIds(const std::string& topic) const;
+    /// @param topic The name of the topic.
+    /// @returns A vector of partition IDs for the given topic.
+    std::vector<std::uint32_t>
+    GetPartitionIds(const std::string& topic, std::optional<std::chrono::milliseconds> timeout = std::nullopt) const;
 
 private:
     friend class impl::Consumer;

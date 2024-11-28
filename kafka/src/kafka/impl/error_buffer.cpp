@@ -18,12 +18,6 @@ void PrintErrorAndThrow(std::string_view failed_action, const ErrorBuffer& err_b
     throw std::runtime_error{full_error};
 }
 
-void PrintErrorAndThrow(std::string_view failed_action, std::string_view reason) {
-    const auto full_error = fmt::format("Failed to {}: {}", failed_action, reason);
-    LOG_ERROR() << full_error;
-    throw std::runtime_error{full_error};
-}
-
 }  // namespace kafka::impl
 
 USERVER_NAMESPACE_END

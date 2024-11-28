@@ -143,9 +143,11 @@ impl::Consumer KafkaCluster::MakeConsumer(
         topics,
         engine::current_task::GetTaskProcessor(),
         engine::current_task::GetTaskProcessor(),
+        engine::current_task::GetTaskProcessor(),
         configuration,
         MakeSecrets(bootstrap_servers_),
-        std::move(params)};
+        std::move(params)
+    };
 };
 
 std::vector<Message> KafkaCluster::ReceiveMessages(

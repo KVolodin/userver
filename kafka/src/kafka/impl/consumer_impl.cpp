@@ -1,10 +1,12 @@
 #include <kafka/impl/consumer_impl.hpp>
 
+#include <algorithm>
 #include <chrono>
 
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
+#include <userver/kafka/exceptions.hpp>
 #include <userver/kafka/impl/configuration.hpp>
 #include <userver/kafka/impl/stats.hpp>
 #include <userver/logging/log.hpp>
@@ -293,48 +295,63 @@ void ConsumerImpl::Commit() { rd_kafka_commit(consumer_.GetHandle(), nullptr, /*
 
 void ConsumerImpl::AsyncCommit() { rd_kafka_commit(consumer_.GetHandle(), nullptr, /*async=*/1); }
 
-OffsetRange ConsumerImpl::GetOffsetRange(const std::string& topic, std::int32_t partition) const {
-    OffsetRange offset_range;
+OffsetRange ConsumerImpl::GetOffsetRange(
+    const std::string& topic,
+    std::uint32_t partition,
+    std::optional<std::chrono::milliseconds> timeout
+) const {
+    int64_t low_offset{0};
+    int64_t high_offset{0};
+
     auto err = rd_kafka_query_watermark_offsets(
         consumer_.GetHandle(),
         topic.c_str(),
         partition,
-        &offset_range.low,
-        &offset_range.high,
-        /*timeout_ms=*/-1
+        &low_offset,
+        &high_offset,
+        static_cast<int>(timeout.value_or(std::chrono::milliseconds(-1)).count())
     );
     if (err != RD_KAFKA_RESP_ERR_NO_ERROR) {
-        PrintErrorAndThrow("get offsets", rd_kafka_err2str(err));
+        throw GetOffsetRangeException{fmt::format("Failed to get offsets: {}", rd_kafka_err2str(err))};
     }
 
-    if (offset_range.low == RD_KAFKA_OFFSET_INVALID || offset_range.high == RD_KAFKA_OFFSET_INVALID) {
-        PrintErrorAndThrow("get offsets", fmt::format("invalid offset for topic {} partition {}", topic, partition));
+    if (low_offset == RD_KAFKA_OFFSET_INVALID || high_offset == RD_KAFKA_OFFSET_INVALID) {
+        throw GetOffsetRangeException{
+            fmt::format("Failed to get offsets: invalid offset for topic {} partition {}", topic, partition)
+        };
     }
 
-    return offset_range;
+    return {static_cast<std::uint32_t>(low_offset), static_cast<std::uint32_t>(high_offset)};
 }
 
-std::vector<std::uint32_t> ConsumerImpl::GetPartitionIds(const std::string& topic) const {
-    MetadataHolder metadata{[this] {
+std::vector<std::uint32_t>
+ConsumerImpl::GetPartitionIds(const std::string& topic, std::optional<std::chrono::milliseconds> timeout) const {
+    MetadataHolder metadata{[this, &topic, &timeout] {
         const rd_kafka_metadata_t* raw_metadata{nullptr};
-        auto err = rd_kafka_metadata(consumer_.GetHandle(), 0, nullptr, &raw_metadata, /*timeout_ms=*/-1);
+        TopicHolder topic_holder{rd_kafka_topic_new(consumer_.GetHandle(), topic.c_str(), nullptr)};
+        auto err = rd_kafka_metadata(
+            consumer_.GetHandle(),
+            /*all_topics=*/0,
+            topic_holder.GetHandle(),
+            &raw_metadata,
+            static_cast<int>(timeout.value_or(std::chrono::milliseconds(-1)).count())
+        );
         if (err != RD_KAFKA_RESP_ERR_NO_ERROR) {
-            PrintErrorAndThrow("fetch metadata", rd_kafka_err2str(err));
+            throw GetMetadataException{fmt::format("Failed to fetch metadata: {}", rd_kafka_err2str(err))};
         }
         return raw_metadata;
     }()};
 
-    userver::utils::span<const rd_kafka_metadata_topic> topics{
-        metadata->topics, static_cast<std::size_t>(metadata->topic_cnt)};
+    utils::span<const rd_kafka_metadata_topic> topics{metadata->topics, static_cast<std::size_t>(metadata->topic_cnt)};
     const auto* topic_it =
         std::find_if(topics.begin(), topics.end(), [&topic](const rd_kafka_metadata_topic& topic_raw) {
             return topic == topic_raw.topic;
         });
     if (topic_it == topics.end()) {
-        PrintErrorAndThrow("find topic", fmt::format("{} not found", topic));
+        throw TopicNotFoundException{fmt::format("Failed to find topic: {}", topic)};
     }
 
-    userver::utils::span<const rd_kafka_metadata_partition> partitions{
+    utils::span<const rd_kafka_metadata_partition> partitions{
         topic_it->partitions, static_cast<std::size_t>(topic_it->partition_cnt)};
     std::vector<std::uint32_t> partition_ids;
     partition_ids.reserve(partitions.size());

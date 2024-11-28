@@ -9,7 +9,7 @@
 #include <userver/engine/single_consumer_event.hpp>
 #include <userver/kafka/impl/holders.hpp>
 #include <userver/kafka/message.hpp>
-#include <userver/kafka/topic.hpp>
+#include <userver/kafka/offset_range.hpp>
 
 #include <kafka/impl/holders_aliases.hpp>
 
@@ -38,11 +38,16 @@ public:
     /// @brief Schedules the commitment task.
     void AsyncCommit();
 
-    /// @brief Retrieves the low and high offsets for the specified kafka topic and partition.
-    OffsetRange GetOffsetRange(const std::string& topic, std::int32_t partition) const;
+    /// @brief Retrieves the low and high offsets for the specified topic and partition.
+    OffsetRange GetOffsetRange(
+        const std::string& topic,
+        std::uint32_t partition,
+        std::optional<std::chrono::milliseconds> timeout = std::nullopt
+    ) const;
 
-    /// @brief Retrieves the partition IDs for the specified kafka topic.
-    std::vector<std::uint32_t> GetPartitionIds(const std::string& topic) const;
+    /// @brief Retrieves the partition IDs for the specified topic.
+    std::vector<std::uint32_t>
+    GetPartitionIds(const std::string& topic, std::optional<std::chrono::milliseconds> timeout = std::nullopt) const;
 
     /// @brief Effectively calls `PollMessage` until `deadline` is reached
     /// and no more than `max_batch_size` messages polled.

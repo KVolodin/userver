@@ -68,6 +68,27 @@ public:
     UnknownPartitionException();
 };
 
+class GetOffsetRangeException : public std::runtime_error {
+public:
+    using std::runtime_error::runtime_error;
+
+    GetOffsetRangeException(const char* what) : std::runtime_error(what) {}
+};
+
+class TopicNotFoundException final : public std::runtime_error {
+public:
+    using std::runtime_error::runtime_error;
+
+    TopicNotFoundException(const char* what) : std::runtime_error(what) {}
+};
+
+class GetMetadataException final : public std::runtime_error {
+public:
+    using std::runtime_error::runtime_error;
+
+    GetMetadataException(const char* what) : std::runtime_error(what) {}
+};
+
 }  // namespace kafka
 
 USERVER_NAMESPACE_END

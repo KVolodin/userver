@@ -55,12 +55,14 @@ public:
     /// @param topics stands for topics list that consumer subscribes to
     /// after ConsumerScope::Start called
     /// @param consumer_task_processor -- task processor for message batches
+    /// @param consumer_operation_task_processor -- task processor for consumer operation
     /// polling
     /// All callbacks are invoked in `main_task_processor`
     Consumer(
         const std::string& name,
         const std::vector<std::string>& topics,
         engine::TaskProcessor& consumer_task_processor,
+        engine::TaskProcessor& consumer_operation_task_processor,
         engine::TaskProcessor& main_task_processor,
         const ConsumerConfiguration& consumer_configuration,
         const Secret& secrets,
@@ -96,13 +98,18 @@ private:
     /// understanding
     void AsyncCommit();
 
-    /// @brief Retrieves the low and high offsets for the specified kafka topic and partition.
+    /// @brief Retrieves the low and high offsets for the specified topic and partition.
     /// @see ConsumerScope::GetOffsetRange for better commitment process
-    OffsetRange GetOffsetRange(const std::string& topic, std::int32_t partition) const;
+    OffsetRange GetOffsetRange(
+        const std::string& topic,
+        std::uint32_t partition,
+        std::optional<std::chrono::milliseconds> timeout = std::nullopt
+    ) const;
 
-    /// @brief Retrieves the partition IDs for the specified kafka topic.
+    /// @brief Retrieves the partition IDs for the specified topic.
     /// @see ConsumerScope::GetPartitionIds for better commitment process
-    std::vector<std::uint32_t> GetPartitionIds(const std::string& topic) const;
+    std::vector<std::uint32_t>
+    GetPartitionIds(const std::string& topic, std::optional<std::chrono::milliseconds> timeout = std::nullopt) const;
 
     /// @brief Adds consumer name to current span.
     void ExtendCurrentSpan() const;
@@ -119,6 +126,7 @@ private:
     const ConsumerExecutionParams execution_params;
 
     engine::TaskProcessor& consumer_task_processor_;
+    engine::TaskProcessor& consumer_operation_task_processor_;
     engine::TaskProcessor& main_task_processor_;
 
     ConfHolder conf_;
