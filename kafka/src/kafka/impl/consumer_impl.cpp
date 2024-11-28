@@ -297,7 +297,7 @@ OffsetRange ConsumerImpl::GetOffsetRange(const std::string& topic, std::int32_t 
     OffsetRange offset_range;
     auto err = rd_kafka_query_watermark_offsets(
         consumer_.GetHandle(),
-        topic.с_str(),
+        topic.c_str(),
         partition,
         &offset_range.low,
         &offset_range.high,
@@ -315,7 +315,7 @@ OffsetRange ConsumerImpl::GetOffsetRange(const std::string& topic, std::int32_t 
 }
 
 std::vector<std::uint32_t> ConsumerImpl::GetPartitionIds(const std::string& topic) const {
-    MetadataHolder metadata{[&consumer_] {
+    MetadataHolder metadata{[this] {
         const rd_kafka_metadata_t* raw_metadata{nullptr};
         auto err = rd_kafka_metadata(consumer_.GetHandle(), 0, nullptr, &raw_metadata, /*timeout_ms=*/-1);
         if (err != RD_KAFKA_RESP_ERR_NO_ERROR) {

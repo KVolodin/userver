@@ -167,11 +167,11 @@ void Consumer::AsyncCommit() {
 }
 
 OffsetRange Consumer::GetOffsetRange(const std::string& topic, std::int32_t partition) const {
-    consumer_->GetOffsetRange(topic, partition);
+    return consumer_->GetOffsetRange(topic, partition);
 }
 
 std::vector<std::uint32_t> Consumer::GetPartitionIds(const std::string& topic) const {
-    consumer_->GetPartitionIds(topic);
+    return consumer_->GetPartitionIds(topic);
 }
 
 void Consumer::Stop() noexcept {
