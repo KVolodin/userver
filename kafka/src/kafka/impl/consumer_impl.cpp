@@ -300,8 +300,8 @@ OffsetRange ConsumerImpl::GetOffsetRange(
     std::uint32_t partition,
     std::optional<std::chrono::milliseconds> timeout
 ) const {
-    int64_t low_offset{0};
-    int64_t high_offset{0};
+    std::int64_t low_offset{0};
+    std::int64_t high_offset{0};
 
     auto err = rd_kafka_query_watermark_offsets(
         consumer_.GetHandle(),
@@ -311,14 +311,15 @@ OffsetRange ConsumerImpl::GetOffsetRange(
         &high_offset,
         static_cast<int>(timeout.value_or(std::chrono::milliseconds(-1)).count())
     );
-    if (err != RD_KAFKA_RESP_ERR_NO_ERROR) {
-        throw GetOffsetRangeException{fmt::format("Failed to get offsets: {}", rd_kafka_err2str(err))};
-    }
 
+    if (err == RD_KAFKA_RESP_ERR__TIMED_OUT) {
+        throw OffsetRangeTimeoutException{topic, partition};
+    }
+    if (err != RD_KAFKA_RESP_ERR_NO_ERROR) {
+        throw OffsetRangeException{fmt::format("Failed to get offsets: {}", rd_kafka_err2str(err)), topic, partition};
+    }
     if (low_offset == RD_KAFKA_OFFSET_INVALID || high_offset == RD_KAFKA_OFFSET_INVALID) {
-        throw GetOffsetRangeException{
-            fmt::format("Failed to get offsets: invalid offset for topic {} partition {}", topic, partition)
-        };
+        throw OffsetRangeException{fmt::format("Failed to get offsets: invalid offset."), topic, partition};
     }
 
     return {static_cast<std::uint32_t>(low_offset), static_cast<std::uint32_t>(high_offset)};
@@ -336,8 +337,11 @@ ConsumerImpl::GetPartitionIds(const std::string& topic, std::optional<std::chron
             &raw_metadata,
             static_cast<int>(timeout.value_or(std::chrono::milliseconds(-1)).count())
         );
+        if (err == RD_KAFKA_RESP_ERR__TIMED_OUT) {
+            throw GetMetadataTimeoutException{topic};
+        }
         if (err != RD_KAFKA_RESP_ERR_NO_ERROR) {
-            throw GetMetadataException{fmt::format("Failed to fetch metadata: {}", rd_kafka_err2str(err))};
+            throw GetMetadataException{fmt::format("Failed to fetch metadata: {}.", rd_kafka_err2str(err)), topic};
         }
         return raw_metadata;
     }()};

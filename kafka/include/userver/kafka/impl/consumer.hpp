@@ -55,14 +55,14 @@ public:
     /// @param topics stands for topics list that consumer subscribes to
     /// after ConsumerScope::Start called
     /// @param consumer_task_processor -- task processor for message batches
-    /// @param consumer_operation_task_processor -- task processor for consumer operation
+    /// @param consumer_blocking_task_processor -- task processor for consumer blocking operation
     /// polling
     /// All callbacks are invoked in `main_task_processor`
     Consumer(
         const std::string& name,
         const std::vector<std::string>& topics,
         engine::TaskProcessor& consumer_task_processor,
-        engine::TaskProcessor& consumer_operation_task_processor,
+        engine::TaskProcessor& consumer_blocking_task_processor,
         engine::TaskProcessor& main_task_processor,
         const ConsumerConfiguration& consumer_configuration,
         const Secret& secrets,

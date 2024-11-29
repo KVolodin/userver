@@ -116,7 +116,7 @@ public:
     void AsyncCommit();
 
     /// @brief Retrieves the minimum and maximum offsets for the specified topic and partition.
-    /// @throws GetOffsetRangeException if the offsets could not retrieve or if the returned offsets are invalid
+    /// @throws GetOffsetRangeException if the offsets could not be retrieve or if the returned offsets are invalid
     /// @warning This is a blocking call
     /// @param topic The name of the topic.
     /// @param partition The partition number of the topic.

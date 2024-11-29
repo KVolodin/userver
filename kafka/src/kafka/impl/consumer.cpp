@@ -53,7 +53,7 @@ Consumer::Consumer(
     const std::string& name,
     const std::vector<std::string>& topics,
     engine::TaskProcessor& consumer_task_processor,
-    engine::TaskProcessor& consumer_operation_task_processor,
+    engine::TaskProcessor& consumer_blocking_task_processor,
     engine::TaskProcessor& main_task_processor,
     const ConsumerConfiguration& configuration,
     const Secret& secrets,
@@ -63,7 +63,7 @@ Consumer::Consumer(
       topics_(topics),
       execution_params(params),
       consumer_task_processor_(consumer_task_processor),
-      consumer_operation_task_processor_(consumer_operation_task_processor),
+      consumer_operation_task_processor_(consumer_blocking_task_processor),
       main_task_processor_(main_task_processor),
       conf_(Configuration{name, configuration, secrets}.Release()) {
     /// To check configuration validity

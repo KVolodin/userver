@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <stdexcept>
+#include <string_view>
 
 USERVER_NAMESPACE_BEGIN
 
@@ -68,25 +70,41 @@ public:
     UnknownPartitionException();
 };
 
-class GetOffsetRangeException : public std::runtime_error {
+/// @brief Exception thrown when there is an error retrieving the offset range.
+class OffsetRangeException : public std::runtime_error {
 public:
     using std::runtime_error::runtime_error;
 
-    GetOffsetRangeException(const char* what) : std::runtime_error(what) {}
+public:
+    OffsetRangeException(std::string_view what, std::string_view topic, std::uint32_t partition);
+};
+
+class OffsetRangeTimeoutException final : public OffsetRangeException {
+    static constexpr const char* kWhat = "Timeout while fetching offsets.";
+
+public:
+    OffsetRangeTimeoutException(std::string_view topic, std::uint32_t partition);
 };
 
 class TopicNotFoundException final : public std::runtime_error {
 public:
     using std::runtime_error::runtime_error;
-
-    TopicNotFoundException(const char* what) : std::runtime_error(what) {}
 };
 
+/// @brief Exception thrown when fetching metadata.
 class GetMetadataException final : public std::runtime_error {
 public:
     using std::runtime_error::runtime_error;
 
-    GetMetadataException(const char* what) : std::runtime_error(what) {}
+public:
+    GetMetadataException(std::string_view what, std::string_view topic);
+};
+
+class GetMetadataTimeoutException final : public std::runtime_error {
+    static constexpr const char* kWhat = "Timeout while getting metadata.";
+
+public:
+    GetMetadataTimeoutException(std::string_view topic);
 };
 
 }  // namespace kafka
