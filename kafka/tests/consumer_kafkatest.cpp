@@ -227,11 +227,11 @@ UTEST_F(ConsumerTest, OneConsumerPartitionDistribution) {
     auto consumer = MakeConsumer("kafka-consumer", /*topics=*/{kLargeTopic1});
     auto consumer_scope = consumer.MakeConsumerScope();
 
-    auto partitions = GetPartitionIds(kLargeTopic1);
+    auto partitions = consumer_scope.GetPartitionIds(kLargeTopic1);
     EXPECT_EQ(partitions.size(), 1ull);
 
     for (const auto& partition_id : partitions) {
-        auto range = GetOffsetRange(kLargeTopic1, partition_id);
+        auto range = consumer_scope.GetOffsetRange(kLargeTopic1, partition_id);
         EXPECT_EQ(range.low, 0u);
         EXPECT_EQ(range.high, 1u);
     }
