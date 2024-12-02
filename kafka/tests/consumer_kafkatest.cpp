@@ -213,4 +213,28 @@ UTEST_F(ConsumerTest, LargeBatch) {
     EXPECT_LT(callback_calls.load(), kMessagesCount) << callback_calls.load();
 }
 
+UTEST_F(ConsumerTest, OneConsumerPartitionDistribution) {
+    const std::vector<kafka::utest::Message> kTestMessages{
+        kafka::utest::Message{
+            kLargeTopic1,
+            "key",
+            "msg-1",
+            /*partition=*/std::nullopt
+        }
+    };
+    SendMessages(kTestMessages);
+
+    auto consumer = MakeConsumer("kafka-consumer", /*topics=*/{kLargeTopic1});
+    auto consumer_scope = consumer.MakeConsumerScope();
+
+    auto partitions = GetPartitionIds(kLargeTopic1);
+    EXPECT_EQ(partitions.size(), 1ull);
+
+    for (const auto& partition_id : partitions) {
+        auto range = GetOffsetRange(kLargeTopic1, partition_id);
+        EXPECT_EQ(range.low, 0u);
+        EXPECT_EQ(range.high, 1u);
+    }
+}
+
 USERVER_NAMESPACE_END
