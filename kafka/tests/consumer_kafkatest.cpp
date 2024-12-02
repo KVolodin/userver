@@ -213,7 +213,7 @@ UTEST_F(ConsumerTest, LargeBatch) {
     EXPECT_LT(callback_calls.load(), kMessagesCount) << callback_calls.load();
 }
 
-UTEST_F(ConsumerTest, OneConsumerPartitionDistribution) {
+UTEST_F(ConsumerTest, CheckOffsetRangeForSinglePartition) {
     const std::vector<kafka::utest::Message> kTestMessages{
         kafka::utest::Message{
             kLargeTopic1,
