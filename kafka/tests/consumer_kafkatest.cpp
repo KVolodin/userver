@@ -213,27 +213,30 @@ UTEST_F(ConsumerTest, LargeBatch) {
     EXPECT_LT(callback_calls.load(), kMessagesCount) << callback_calls.load();
 }
 
-UTEST_F(ConsumerTest, CheckOffsetRangeForSinglePartition) {
-    const std::vector<kafka::utest::Message> kTestMessages{
-        kafka::utest::Message{
-            kLargeTopic1,
-            "key",
-            "msg-1",
-            /*partition=*/std::nullopt
-        }
-    };
-    SendMessages(kTestMessages);
+UTEST_F(ConsumerTest, OneConsumerPartitionOffsets) {
+    constexpr std::size_t kMessagesCount{kNumPartitionsLargeTopic};
+    const auto messages = utils::GenerateFixedArray(kMessagesCount, [](std::size_t i) {
+        return kafka::utest::Message{kLargeTopic1, fmt::format("key-{}", i), fmt::format("msg-{}", i), i};
+    });
+    SendMessages(messages);
 
     auto consumer = MakeConsumer("kafka-consumer", /*topics=*/{kLargeTopic1});
-    auto consumer_scope = consumer.MakeConsumerScope();
+    ReceiveMessages(consumer, messages.size());
 
-    auto partitions = consumer_scope.GetPartitionIds(kLargeTopic1);
-    EXPECT_EQ(partitions.size(), 1ull);
+    auto consumer_scope = consumer.MakeConsumerScope();
+    // Processing must be started, because actual consumer is destroyed after processing stopped.
+    consumer_scope.Start([](kafka::MessageBatchView) {});
+
+    const auto partitions = consumer_scope.GetPartitionIds(kLargeTopic1);
+    EXPECT_EQ(partitions.size(), 4ull);
 
     for (const auto& partition_id : partitions) {
-        auto range = consumer_scope.GetOffsetRange(kLargeTopic1, partition_id);
-        EXPECT_EQ(range.low, 0u);
-        EXPECT_EQ(range.high, 1u);
+        kafka::OffsetRange offset_range{};
+        UEXPECT_NO_THROW(
+            offset_range = consumer_scope.GetOffsetRange(kLargeTopic1, partition_id, utest::kMaxTestWaitTime)
+        );
+        EXPECT_EQ(offset_range.low, 0u);
+        EXPECT_EQ(offset_range.high, 1u);
     }
 }
 
