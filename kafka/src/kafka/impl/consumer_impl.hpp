@@ -67,9 +67,10 @@ public:
     /// @warning May throw in testsuite because calls testpoints
     void StopConsuming();
 
-private:
     /// @brief Schedules the `topics_` subscription.
-    void StartConsuming(const std::vector<std::string>& topics);
+    void StartConsuming();
+
+private:
 
     /// @brief Try to poll the message until `deadline` is reached.
     /// If no message polled until the deadline, returns
@@ -116,6 +117,8 @@ private:
 private:
     const std::string& name_;
     Stats& stats_;
+
+    const std::vector<std::string> topics_;
 
     engine::SingleConsumerEvent queue_became_non_empty_event_;
 

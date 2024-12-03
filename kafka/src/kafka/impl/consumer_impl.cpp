@@ -251,21 +251,19 @@ ConsumerImpl::ConsumerImpl(
     const std::vector<std::string>& topics,
     Stats& stats
 )
-    : name_(name), stats_(stats), consumer_(conf) {
-    StartConsuming(topics);
-}
+    : name_(name), stats_(stats), topics_(topics), consumer_(conf) {}
 
 const Stats& ConsumerImpl::GetStats() const { return stats_; }
 
-void ConsumerImpl::StartConsuming(const std::vector<std::string>& topics) {
+void ConsumerImpl::StartConsuming() {
     rd_kafka_queue_cb_event_enable(consumer_.GetQueue(), &EventCallbackProxy, this);
 
-    TopicPartitionsListHolder topic_partitions_list{rd_kafka_topic_partition_list_new(topics.size())};
-    for (const auto& topic : topics) {
+    TopicPartitionsListHolder topic_partitions_list{rd_kafka_topic_partition_list_new(topics_.size())};
+    for (const auto& topic : topics_) {
         rd_kafka_topic_partition_list_add(topic_partitions_list.GetHandle(), topic.c_str(), RD_KAFKA_PARTITION_UA);
     }
 
-    LOG_INFO() << fmt::format("Consumer is subscribing to topics: [{}]", fmt::join(topics, ", "));
+    LOG_INFO() << fmt::format("Consumer is subscribing to topics: [{}]", fmt::join(topics_, ", "));
 
     rd_kafka_subscribe(consumer_.GetHandle(), topic_partitions_list.GetHandle());
 }

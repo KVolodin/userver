@@ -90,6 +90,8 @@ void Consumer::DumpMetric(utils::statistics::Writer& writer) const {
 }
 
 void Consumer::RunConsuming(ConsumerScope::Callback callback) {
+    consumer_->StartConsuming();
+
     LOG_INFO() << fmt::format("Started messages polling");
 
     while (!engine::current_task::ShouldCancel()) {
