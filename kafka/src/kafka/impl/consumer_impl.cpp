@@ -272,8 +272,6 @@ void ConsumerImpl::StopConsuming() {
     // disable EventCallback
     rd_kafka_queue_cb_event_enable(consumer_.GetQueue(), nullptr, nullptr);
 
-    utils::FastScopeGuard destroy_consumer_guard{[this]() noexcept { consumer_.reset(); }};
-
     ErrorHolder error{rd_kafka_consumer_close_queue(consumer_.GetHandle(), consumer_.GetQueue())};
     if (error) {
         LOG_ERROR() << fmt::format(
