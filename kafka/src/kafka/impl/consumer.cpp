@@ -65,7 +65,8 @@ Consumer::Consumer(
       consumer_task_processor_(consumer_task_processor),
       consumer_operation_task_processor_(consumer_blocking_task_processor),
       main_task_processor_(main_task_processor),
-      conf_(Configuration{name, configuration, secrets}.Release()) {
+      conf_(Configuration{name, configuration, secrets}.Release()),
+      consumer_(std::make_unique<ConsumerImpl>(name_, conf_, topics_, stats_)) {
     /// To check configuration validity
     [[maybe_unused]] auto _ = ConsumerHolder{conf_};
 }
@@ -89,8 +90,6 @@ void Consumer::DumpMetric(utils::statistics::Writer& writer) const {
 }
 
 void Consumer::RunConsuming(ConsumerScope::Callback callback) {
-    consumer_ = std::make_unique<ConsumerImpl>(name_, conf_, topics_, stats_);
-
     LOG_INFO() << fmt::format("Started messages polling");
 
     while (!engine::current_task::ShouldCancel()) {
@@ -209,7 +208,6 @@ void Consumer::Stop() noexcept {
             // 1. This is blocking.
             // 2. This calls testpoints
             consumer_->StopConsuming();
-            consumer_.reset();
         }).Get();
         TESTPOINT(fmt::format("tp_{}_stopped", name_), {});
         LOG_INFO() << "Consumer stopped";

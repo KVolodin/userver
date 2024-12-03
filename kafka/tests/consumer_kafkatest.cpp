@@ -224,8 +224,6 @@ UTEST_F(ConsumerTest, OneConsumerPartitionOffsets) {
     ReceiveMessages(consumer, messages.size());
 
     auto consumer_scope = consumer.MakeConsumerScope();
-    // Processing must be started, because actual consumer is destroyed after processing stopped.
-    consumer_scope.Start([](kafka::MessageBatchView) {});
 
     const auto partitions = consumer_scope.GetPartitionIds(kLargeTopic1);
     EXPECT_EQ(partitions.size(), 4ull);
