@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <functional>
 
 #include <userver/kafka/message.hpp>
@@ -139,6 +140,8 @@ private:
     friend class impl::Consumer;
 
     explicit ConsumerScope(impl::Consumer& consumer) noexcept;
+
+    std::atomic<bool> processing_{false};
 
     impl::Consumer& consumer_;
 };

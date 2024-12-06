@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <iostream>
 
 #include <fmt/format.h>
 #include <fmt/ranges.h>
@@ -265,7 +266,10 @@ void ConsumerImpl::StartConsuming() {
 
     LOG_INFO() << fmt::format("Consumer is subscribing to topics: [{}]", fmt::join(topics_, ", "));
 
-    rd_kafka_subscribe(consumer_.GetHandle(), topic_partitions_list.GetHandle());
+    auto err = rd_kafka_subscribe(consumer_.GetHandle(), topic_partitions_list.GetHandle());
+    if (err != RD_KAFKA_RESP_ERR_NO_ERROR) {
+        throw std::runtime_error{fmt::format("Consumer failed to subscribing: {}", rd_kafka_err2str(err))};
+    }
 }
 
 void ConsumerImpl::StopConsuming() {

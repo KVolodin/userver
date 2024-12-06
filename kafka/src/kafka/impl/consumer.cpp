@@ -90,6 +90,7 @@ void Consumer::DumpMetric(utils::statistics::Writer& writer) const {
 }
 
 void Consumer::RunConsuming(ConsumerScope::Callback callback) {
+    consumer_ = std::make_unique<ConsumerImpl>(name_, conf_, topics_, stats_);
     consumer_->StartConsuming();
 
     LOG_INFO() << fmt::format("Started messages polling");
