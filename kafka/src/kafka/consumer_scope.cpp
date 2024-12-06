@@ -8,16 +8,9 @@ namespace kafka {
 
 ConsumerScope::ConsumerScope(impl::Consumer& consumer) noexcept : consumer_(consumer) {}
 
-ConsumerScope::~ConsumerScope() {
-    if (processing_.load()) {
-        Stop();
-    }
-}
+ConsumerScope::~ConsumerScope() { Stop(); }
 
-void ConsumerScope::Start(Callback callback) {
-    consumer_.StartMessageProcessing(std::move(callback));
-    processing_.store(true);
-}
+void ConsumerScope::Start(Callback callback) { consumer_.StartMessageProcessing(std::move(callback)); }
 
 void ConsumerScope::Stop() noexcept { consumer_.Stop(); }
 

@@ -200,8 +200,6 @@ Consumer::GetPartitionIds(const std::string& topic, std::optional<std::chrono::m
 }
 
 void Consumer::Stop() noexcept {
-    UINVARIANT(processing_.load(), "Stopping already stopped consumer");
-
     if (processing_.exchange(false) && poll_task_.IsValid()) {
         LOG_INFO() << "Stopping consumer poll task";
         poll_task_.SyncCancel();
